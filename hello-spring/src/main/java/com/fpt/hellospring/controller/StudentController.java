@@ -2,81 +2,62 @@ package com.fpt.hellospring.controller;
 
 
 import com.fpt.hellospring.entity.Student;
+import com.fpt.hellospring.service.StudentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(path = "api/v1/students")
 
 public class StudentController {
-    static List<Student> list = new ArrayList<>();
 
-    {
-        list.add(Student.builder().rollNumber("A001").fullName("Lio").build());
-        list.add(Student.builder().rollNumber("A002").fullName("Lia").build());
-        list.add(Student.builder().rollNumber("A003").fullName("Lib").build());
-        list.add(Student.builder().rollNumber("A004").fullName("Lic").build());
-        list.add(Student.builder().rollNumber("A005").fullName("Lid").build());
-    }
-
+    @Autowired
+    StudentService studentService;
     @RequestMapping(method = RequestMethod.GET)
-    public List<Student> findAll(){
-        return list;
+    public ResponseEntity<List<Student>> getList(){
+        return ResponseEntity.ok(studentService.findAll());
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "{id}")
-    public Student findById(@PathVariable String id){
-        int foundIndex = -1;
-        for (int i = 0; i < list.size(); i++){
-            if(list.get(1).getRollNumber().equals(id)){
-                foundIndex = i;
-                break;
-            }
+    public ResponseEntity<?> getDetail(@PathVariable String id){
+        Optional<Student> optionalStudent = studentService.findById(id);
+        if (!optionalStudent.isPresent()){
+            ResponseEntity.badRequest().build();
         }
-        if (foundIndex == -1){
-            return null;
-        }
-        return list.get(foundIndex);
+        return ResponseEntity.ok(optionalStudent.get());
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public Student save(@PathVariable Student student){
-        list.add(student);
-        return student;
+    public ResponseEntity<Student> create(@RequestBody Student student){
+        return ResponseEntity.ok(studentService.save(student));
     }
 
 
     @RequestMapping(method = RequestMethod.DELETE, path = "{id}")
-    public boolean deleteById(@PathVariable String id){
-        int foundIndex = -1;
-        for (int i = 0; i < list.size(); i++){
-            if(list.get(1).getRollNumber().equals(id)){
-                foundIndex = i;
-                break;
-            }
-        }
-        if (foundIndex == -1){
-            return false;
-        }
-        return true;
+    public ResponseEntity<?> delete(@PathVariable String id){
+    if (!studentService.findById(id).isPresent()){
+        ResponseEntity.badRequest().build();
     }
+    studentService.deleteById(id);
+    return ResponseEntity.ok().build();
+}
 
     @RequestMapping(method = RequestMethod.PUT, path = "{id}")
-    public Student update(@PathVariable String id, @RequestBody Student updateStudent){
-        int foundIndex = -1;
-        for (int i = 0; i < list.size(); i++){
-            if(list.get(1).getRollNumber().equals(id)){
-                foundIndex = i;
-                break;
-            }
+    public ResponseEntity<Student> update(@PathVariable String id, @RequestBody Student updateStudent){
+        Optional<Student> optionalStudent = studentService.findById(id);
+        if (!optionalStudent.isPresent()){
+            ResponseEntity.badRequest().build();
         }
-        if (foundIndex == -1){
-            return null;
-        }
-        Student existing = list.get(foundIndex);
-        existing.setFullName(updateStudent.getFullName());
-        return existing;
+        Student existStudent = optionalStudent.get();
+
+        existStudent.setRollNumber(existStudent.getRollNumber());
+        existStudent.setFullName(existStudent.getFullName());
+        return ResponseEntity.ok(studentService.save(existStudent));
+
     }
 }
